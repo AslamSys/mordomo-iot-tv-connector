@@ -221,6 +221,108 @@ iot.tv.app:
 
 > **Nota sobre cast de vídeo:** A LG não tem API pública para "cast" direto de arquivo de vídeo de forma confiável. A abordagem mais estável é abrir o **Jellyfin no browser embutido** ou usar **DLNA** (se habilitado na TV).
 
+### 🚀 Apps com Deep Link (openAppWithPayload)
+
+A API `ssap://com.webos.applicationManager/launch` aceita um `contentId` como payload — permite abrir um app **diretamente em um conteúdo específico**, sem precisar navegar manualmente.
+
+> ⚠️ **Funciona apenas se o app implementar o tratamento do `contentId`.** Cada streaming decide isso — não é garantido pela LG.
+
+```yaml
+# NATS topic para abrir app com ou sem deep link
+iot.tv.app:
+  device_id: tv_sala
+  app_id: "com.webos.app.browser"   # ID do app na TV
+  content_id: "..."                  # opcional — conteúdo específico
+  url: "..."                         # opcional — apenas para browser
+```
+
+#### Apps e IDs conhecidos
+
+```yaml
+# Para descobrir todos os IDs instalados na sua TV:
+# ssap://com.webos.applicationManager/listApps
+# lgtv --name MyTV --ssl listApps
+
+# Apps comuns:
+netflix:                    "netflix"
+YouTube:                    "youtube.leanback.v4"
+Prime Video:                "amazon"
+Disney+:                    "com.disney.disneyplus-prod"
+HBO Max / Max:              "com.hbo.hbomax"
+Globoplay:                  "globoplay"
+Telecine:                   "telecine"
+Paramount+:                 "com.paramount.paramountplus"
+Apple TV+:                  "com.apple.appletv"
+Browser embutido:           "com.webos.app.browser"
+Live TV:                    "com.webos.app.livetv"
+Music (LG):                 "com.webos.app.music"
+Galeria de fotos:           "com.webos.app.photovideo"
+```
+
+#### Deep Link por app — suporte real
+
+| App | Abre o app | Deep Link (conteúdo específico) | Observação |
+|---|---|---|---|
+| **Netflix** | ✅ | ✅ Funciona | aceita `contentId` com IMDB ID ou Netflix ID |
+| **YouTube** | ✅ | ✅ Funciona | aceita `contentId` com video ID (ex: `dQw4w9WgXcQ`) |
+| **Prime Video** | ✅ | ⚠️ Parcial | funciona em alguns modelos/firmwares |
+| **Disney+** | ✅ | ⚠️ Não documentado | pode funcionar com ID interno |
+| **HBO Max / Max** | ✅ | ❌ Não suportado | abre o app, mas não navega para conteúdo |
+| **Globoplay** | ✅ | ❌ Não documentado | — |
+| **Browser** | ✅ | ✅ via `url` | abre qualquer URL — ex: Jellyfin |
+
+#### Exemplos de deep link
+
+```python
+# Netflix — abre diretamente no Big Bang Theory
+await client.launch_app_with_params("netflix", {
+    "contentId": "tt0898266"   # IMDB ID funciona no Netflix webOS
+})
+
+# YouTube — abre vídeo específico
+await client.launch_app_with_params("youtube.leanback.v4", {
+    "contentId": "dQw4w9WgXcQ"
+})
+
+# Jellyfin no browser embutido — mais confiável para mídia local
+await client.launch_app_with_params("com.webos.app.browser", {
+    "target": "http://192.168.1.X:8096"
+})
+
+# HBO Max — só abre o app (sem deep link confiável)
+await client.launch_app("com.hbo.hbomax")
+```
+
+#### Via NATS (interface do Mordomo)
+
+```yaml
+# "Abre Big Bang Theory na Netflix"
+iot.tv.app:
+  device_id: tv_sala
+  app_id: netflix
+  content_id: "tt0898266"
+
+# "Abre YouTube no vídeo X"
+iot.tv.app:
+  device_id: tv_sala
+  app_id: youtube.leanback.v4
+  content_id: "dQw4w9WgXcQ"
+
+# "Abre o Jellyfin na TV"
+iot.tv.app:
+  device_id: tv_sala
+  app_id: com.webos.app.browser
+  url: "http://192.168.1.X:8096"
+
+# "Abre o HBO Max"
+iot.tv.app:
+  device_id: tv_sala
+  app_id: com.hbo.hbomax
+  # sem content_id — limitação do app
+```
+
+---
+
 ### Controles de Playback
 ```yaml
 iot.tv.control: { device_id: tv_sala, action: "pause" }
