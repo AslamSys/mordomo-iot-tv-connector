@@ -2,18 +2,18 @@
 
 ## 🔗 Navegação
 
-**[🏠 AslamSys](https://github.com/AslamSys)** → **[📚 _system](https://github.com/AslamSys/_system)** → **[📂 IoT (RPi 3B+)](https://github.com/AslamSys/_system/blob/main/hardware/iot%20-%20(raspberry-pi-3b)/README.md)** → **mordomo-iot-tv-connector**
+**[🏠 AslamSys](https://github.com/AslamSys)** → **[📚 _system](https://github.com/AslamSys/_system)** → **[📂 IoT](https://github.com/AslamSys/mordomo/blob/main/iot)/README.md)** → **mordomo-iot-tv-connector**
 
 ### Containers Relacionados (iot)
 - [mordomo-iot-orchestrator](https://github.com/AslamSys/mordomo-iot-orchestrator)
 - [mordomo-iot-mqtt-broker](https://github.com/AslamSys/mordomo-iot-mqtt-broker)
-- [mordomo-iot-state-cache](https://github.com/AslamSys/mordomo-iot-state-cache)
+- [infra/redis](https://github.com/AslamSys/infra) — db 2 (iot-state)
 
 ---
 
 **Container:** `mordomo-iot-tv-connector`  
 **Ecossistema:** Mordomo / IoT  
-**Hardware:** Raspberry Pi 3B+  
+**Hardware:** Orange Pi 5 Ultra  
 **Sem LLM:** Execução direta de comandos
 
 ---
@@ -66,7 +66,7 @@ iot.tv.notify:     { device_id, message: "...", icon_url: "..." }
 iot.tv.button:     { device_id, key: "home|back|ok|up|down|left|right|..." }
 ```
 
-### Publish (envia ao iot-state-cache)
+### Publish (envia ao Redis da infra — db 2)
 ```yaml
 iot.tv.state:
   device_id: tv_sala
@@ -415,7 +415,7 @@ pyyaml>=6.0            # leitura do devices.yaml
 
 **Container:** `iot-tv-connector`  
 **Ecossistema:** IoT  
-**Hardware:** Raspberry Pi 3B+  
+**Hardware:** Orange Pi 5 Ultra  
 **Sem LLM:** Execução direta de comandos
 
 ---
@@ -433,7 +433,7 @@ Controlador genérico de TVs. Recebe comandos unificados via NATS (`iot.tv.*`) e
 - ✅ Interface unificada independente de marca/protocolo
 - ✅ Reprodução de mídia (URL de stream ou arquivo Jellyfin)
 - ✅ Controles básicos: ligar, desligar, volume, input, pause/play
-- ✅ Reportar estado atual ao iot-state-cache
+- ✅ Reportar estado atual ao Redis da infra (db 2)
 
 ---
 
@@ -502,7 +502,7 @@ Payload: { "device_id": "tv_sala", "source": "hdmi1" }
 
 ### Publish
 ```javascript
-// Estado atual da TV (sincronizado com iot-state-cache)
+// Estado atual da TV (sincronizado com Redis da infra — db 2)
 Topic: "iot.tv.state"
 Payload: {
   "device_id": "tv_sala",
